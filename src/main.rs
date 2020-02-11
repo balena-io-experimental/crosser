@@ -7,8 +7,8 @@ mod args;
 
 const API_BASE: &str = "https://api.balena-cloud.com";
 
-const ENDPOINT_APPLICATION         : &str = "v5/application";
-const ENDPOINT_USER                : &str = "v5/user";
+const ENDPOINT_APPLICATION: &str = "v5/application";
+const ENDPOINT_USER: &str = "v5/user";
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Application {
@@ -52,11 +52,15 @@ fn format_url(endpoint: &str) -> String {
 }
 
 fn get_application_by_name(token: &str, name: &str) -> Result<Vec<Application>> {
-    Ok(get(token, &get_application_by_name_endpoint(name))?.json::<Response<Application>>()?.data)
+    Ok(get(token, &get_application_by_name_endpoint(name))?
+        .json::<Response<Application>>()?
+        .data)
 }
 
 fn get_applications(token: &str) -> Result<Vec<Application>> {
-    Ok(get(token, ENDPOINT_APPLICATION)?.json::<Response<Application>>()?.data)
+    Ok(get(token, ENDPOINT_APPLICATION)?
+        .json::<Response<Application>>()?
+        .data)
 }
 
 fn get_users(token: &str) -> Result<Vec<User>> {
