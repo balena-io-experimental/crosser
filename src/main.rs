@@ -22,7 +22,8 @@ async fn main() -> Result<()> {
 
     println!("Application username: {}", username);
 
-    crate::cloud::build_application(&crosser.token, &username, app, gzip).await?;
+    let success = crate::cloud::build_application(&crosser.token, &username, app, gzip).await?;
+    println!("Build result: {:?}", success);
 
     Ok(())
 }

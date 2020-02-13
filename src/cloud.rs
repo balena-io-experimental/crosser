@@ -77,7 +77,7 @@ pub async fn build_application(
     username: &str,
     app: &str,
     gzip: Vec<u8>,
-) -> Result<()> {
+) -> Result<bool> {
     let endpoint = get_build_application_endpoint(username, app);
     let url = format!("{}/{}", BUILDER_BASE, endpoint);
     println!("{}", url);
@@ -91,12 +91,22 @@ pub async fn build_application(
 
     let mut stream = ArrayStream::new();
 
+    let mut success = false;
+
     while let Some(chunk) = res.chunk().await? {
         stream.extend(std::str::from_utf8(&chunk).context("Response is not an utf-8 string")?);
         for value in &mut stream {
             let obj = value
                 .as_object()
                 .context("Serialized response is not an object")?;
+
+            if let Some(is_success) = obj.get("isSuccess") {
+                let is_success = is_success
+                    .as_bool()
+                    .context("Message isSuccess property is not a boolean")?;
+                success = is_success;
+            }
+
             if let Some(message) = obj.get("message") {
                 if let Some(replace) = obj.get("replace") {
                     let replace = replace
@@ -114,7 +124,7 @@ pub async fn build_application(
         }
     }
 
-    Ok(())
+    Ok(success)
 }
 
 pub struct ArrayStream {
