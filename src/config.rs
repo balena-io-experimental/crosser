@@ -19,7 +19,7 @@ pub fn read_config() -> Crosser {
 
     let token = get_token(&matches);
 
-    Crosser { token: token }
+    Crosser { token }
 }
 
 fn get_token(matches: &ArgMatches) -> String {

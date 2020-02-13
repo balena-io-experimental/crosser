@@ -134,6 +134,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tar",
+ "tokio",
 ]
 
 [[package]]
@@ -932,6 +933,18 @@ dependencies = [
  "num_cpus",
  "pin-project-lite",
  "slab",
+ "tokio-macros",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4b1e7ed7d5d4c2af3d999904b0eebe76544897cdbfb2b9684bed2174ab20f7c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

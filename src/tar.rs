@@ -19,11 +19,10 @@ where
 {
     let data = tar_dockerfile_directory(path)?;
 
-    let mut emcoder = GzEncoder::new(Vec::new(), Compression::default());
-    emcoder.write_all(&data)?;
-    let compressed_bytes = emcoder.finish()?;
-
-    Ok(compressed_bytes)
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(&data)?;
+    let archive = encoder.finish()?;
+    Ok(archive)
 }
 
 fn tar_dockerfile_directory<P>(path: P) -> Result<Vec<u8>>

@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{Deserializer, Value};
 
 const API_BASE: &str = "https://api.balena-cloud.com";
 const BUILDER_BASE: &str = "https://builder.balena-cloud.com";
@@ -25,36 +25,38 @@ fn get_application_by_name_endpoint(app: &str) -> String {
     format!("{}?$filter=app_name eq '{}'", ENDPOINT_APPLICATION, app)
 }
 
-fn get(token: &str, endpoint: &str) -> Result<reqwest::blocking::Response> {
-    let url = format_url(endpoint);
-    Ok(reqwest::blocking::Client::new()
+async fn get(token: &str, endpoint: &str) -> Result<reqwest::Response> {
+    let url = format!("{}/{}", API_BASE, endpoint);
+    Ok(reqwest::Client::new()
         .get(&url)
         .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
-        .send()?)
+        .send()
+        .await?)
 }
 
-fn format_url(endpoint: &str) -> String {
-    format!("{}/{}", API_BASE, endpoint)
-}
-
-pub fn get_application_by_name(token: &str, app: &str) -> Result<Vec<Application>> {
-    Ok(get(token, &get_application_by_name_endpoint(app))?
-        .json::<Response<Application>>()?
+pub async fn get_application_by_name(token: &str, app: &str) -> Result<Vec<Application>> {
+    Ok(get(token, &get_application_by_name_endpoint(app))
+        .await?
+        .json::<Response<Application>>()
+        .await?
         .data)
 }
 
-pub fn get_application_username(token: &str, app: &str) -> Result<String> {
-    let mut users = get(token, &get_application_username_endpoint(app))?
-        .json::<Response<Value>>()?
+pub async fn get_application_username(token: &str, app: &str) -> Result<String> {
+    let mut users = get(token, &get_application_username_endpoint(app))
+        .await?
+        .json::<Response<Value>>()
+        .await?
         .data;
 
-    Ok(Value::to_string(
-        users
-            .pop()
-            .context("One application owner expected")?
-            .pointer("/user/0/username")
-            .context("Username pointer failed")?,
-    ))
+    Ok(users
+        .pop()
+        .context("One application owner expected")?
+        .pointer("/user/0/username")
+        .context("Username pointer failed")?
+        .as_str()
+        .context("Usename not a string")?
+        .to_string())
 }
 
 fn get_application_username_endpoint(app: &str) -> String {
@@ -64,19 +66,97 @@ fn get_application_username_endpoint(app: &str) -> String {
     )
 }
 
-pub fn build_application(token: &str, username: &str, app: &str, gzip: Vec<u8>) -> Result<()> {
+pub async fn build_application(
+    token: &str,
+    username: &str,
+    app: &str,
+    gzip: Vec<u8>,
+) -> Result<()> {
     let endpoint = get_build_application_endpoint(username, app);
     let url = format!("{}/{}", BUILDER_BASE, endpoint);
-    let response = reqwest::blocking::Client::new()
+    println!("{}", url);
+    let mut res = reqwest::Client::new()
         .post(&url)
         .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
         .header(reqwest::header::CONTENT_ENCODING, "gzip")
         .body(gzip)
-        .send()?;
+        .send()
+        .await?;
 
-    println!("{:?}", response);
+    let mut stream = ArrayStream::new();
+
+    while let Some(chunk) = res.chunk().await? {
+        stream.extend(std::str::from_utf8(&chunk).context("Build response is not an UTF8 string")?);
+        for value in &mut stream {
+            let obj = value
+                .as_object()
+                .context("Serialized build response is not an object")?;
+            if let Some(message) = obj.get("message") {
+                let message = message
+                    .as_str()
+                    .context("Build response message is not a string")?;
+                println!("{}", message);
+            }
+        }
+    }
 
     Ok(())
+}
+
+pub struct ArrayStream {
+    buffer: String,
+    started: bool,
+}
+
+impl ArrayStream {
+    pub fn new() -> Self {
+        ArrayStream {
+            buffer: String::new(),
+            started: false,
+        }
+    }
+
+    pub fn extend(&mut self, other: &str) {
+        self.buffer.push_str(other);
+    }
+
+    fn next_value(&mut self) -> (Option<Value>, usize) {
+        let mut cut: usize = 0;
+
+        for (i, ch) in self.buffer.chars().enumerate() {
+            match ch {
+                '\n' => continue,
+                '[' if !self.started => {
+                    self.started = true;
+                    continue;
+                }
+                ',' if self.started => continue,
+                _ => {
+                    cut = i;
+                    break;
+                }
+            }
+        }
+
+        let substring = &self.buffer[cut..];
+
+        let mut stream = Deserializer::from_str(substring).into_iter::<Value>();
+
+        match stream.next() {
+            Some(result) => (result.ok(), cut + stream.byte_offset()),
+            None => (None, cut),
+        }
+    }
+}
+
+impl Iterator for ArrayStream {
+    type Item = Value;
+
+    fn next(&mut self) -> Option<Value> {
+        let (value_option, byte_offset) = self.next_value();
+        self.buffer.drain(..byte_offset);
+        value_option
+    }
 }
 
 fn get_build_application_endpoint(username: &str, app: &str) -> String {
