@@ -1,6 +1,12 @@
+use std::io::{stdout, Write};
+
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::{Deserializer, Value};
+
+use crossterm::cursor::MoveUp;
+use crossterm::execute;
+use crossterm::style::Print;
 
 const API_BASE: &str = "https://api.balena-cloud.com";
 const BUILDER_BASE: &str = "https://builder.balena-cloud.com";
@@ -86,16 +92,24 @@ pub async fn build_application(
     let mut stream = ArrayStream::new();
 
     while let Some(chunk) = res.chunk().await? {
-        stream.extend(std::str::from_utf8(&chunk).context("Build response is not an UTF8 string")?);
+        stream.extend(std::str::from_utf8(&chunk).context("Response is not an utf-8 string")?);
         for value in &mut stream {
             let obj = value
                 .as_object()
-                .context("Serialized build response is not an object")?;
+                .context("Serialized response is not an object")?;
             if let Some(message) = obj.get("message") {
+                if let Some(replace) = obj.get("replace") {
+                    let replace = replace
+                        .as_bool()
+                        .context("Message replace property is not a boolean")?;
+                    if replace {
+                        execute!(stdout(), MoveUp(1))?;
+                    }
+                }
                 let message = message
                     .as_str()
-                    .context("Build response message is not a string")?;
-                println!("{}", message);
+                    .context("Response message is not a string")?;
+                execute!(stdout(), Print(message), Print('\n'))?;
             }
         }
     }
