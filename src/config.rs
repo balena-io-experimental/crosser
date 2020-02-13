@@ -1,10 +1,10 @@
 use clap::{App, Arg, ArgMatches};
 
-pub struct Args {
+pub struct Crosser {
     pub token: String,
 }
 
-pub fn get_cli_args() -> Args {
+pub fn read_config() -> Crosser {
     let matches = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -19,7 +19,7 @@ pub fn get_cli_args() -> Args {
 
     let token = get_token(&matches);
 
-    Args { token: token }
+    Crosser { token: token }
 }
 
 fn get_token(matches: &ArgMatches) -> String {

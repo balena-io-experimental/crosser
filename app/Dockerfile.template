@@ -1,0 +1,3 @@
+FROM balenalib/%%RESIN_MACHINE_NAME%%-debian
+
+CMD ["sleep", "infinity"]
