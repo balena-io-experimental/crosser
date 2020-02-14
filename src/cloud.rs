@@ -7,6 +7,7 @@ use serde_json::{Deserializer, Value};
 use crossterm::cursor::MoveUp;
 use crossterm::execute;
 use crossterm::style::Print;
+use crossterm::terminal::{Clear, ClearType};
 
 const API_BASE: &str = "https://api.balena-cloud.com";
 const BUILDER_BASE: &str = "https://builder.balena-cloud.com";
@@ -120,6 +121,23 @@ pub async fn build_application(
                     .as_str()
                     .context("Response message is not a string")?;
                 execute!(stdout(), Print(message), Print('\n'))?;
+            }
+
+            if let Some(resource) = obj.get("resource") {
+                let resource = resource
+                    .as_str()
+                    .context("Resource property is not a string")?;
+
+                if resource == "cursor" {
+                    let value = obj
+                        .get("value")
+                        .context("No replace property defined")?
+                        .as_str()
+                        .context("Value is not a string")?;
+                    if value == "erase" {
+                        execute!(stdout(), MoveUp(1), Clear(ClearType::CurrentLine))?;
+                    }
+                }
             }
         }
     }
