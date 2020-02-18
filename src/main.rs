@@ -27,5 +27,9 @@ async fn main() -> Result<()> {
 
     println!("Build result: {:?}", success);
 
+    let image = crate::cloud::get_device_image(&crosser.token, &registration.uuid).await?;
+
+    println!("Image: {}", image);
+
     Ok(())
 }

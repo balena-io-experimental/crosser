@@ -278,11 +278,32 @@ fn new_uuid() -> Result<String> {
     Ok(hex::encode(buf))
 }
 
-/*
-curl --verbose \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer axXSVwCiWho7BnFajmNPOF0coA3hrzAR" \
-  --request POST \
-  --data '{"application":1587252,"device_type":"raspberrypi3","user":21420,"uuid":"94210a15349f4f438f7f142be27da30f"}' \
-  https://api.balena-cloud.com/device/register
-*/
+pub async fn get_device_image(token: &str, uuid: &str) -> Result<String> {
+    let value = get(token, &get_device_state_endpoint(uuid))
+        .await?
+        .json::<Value>()
+        .await?;
+
+    Ok(get_image_from_device_state(&value).context("Image not found in device state")?)
+}
+
+fn get_device_state_endpoint(uuid: &str) -> String {
+    format!("device/v2/{}/state", uuid)
+}
+
+fn get_image_from_device_state(val: &Value) -> Option<String> {
+    if let Some(map) = val.as_object() {
+        for (key, inner) in map.iter() {
+            if key == "image" {
+                return inner.as_str().map(|s| s.to_string());
+            } else {
+                let result = get_image_from_device_state(inner);
+                if result.is_some() {
+                    return result;
+                }
+            }
+        }
+    }
+
+    None
+}
