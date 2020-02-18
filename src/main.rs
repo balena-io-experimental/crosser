@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 
 mod cloud;
 mod config;
@@ -6,23 +6,25 @@ mod tar;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let app = "crosser";
+    let app_name = "crosser";
 
     let crosser = config::read_config();
 
-    let applications = crate::cloud::get_application_by_name(&crosser.token, app).await?;
+    let application = crate::cloud::get_application_by_name(&crosser.token, app_name).await?;
 
-    if applications.is_empty() {
-        bail!("Application not found");
-    }
+    let user = crate::cloud::get_application_user(&crosser.token, &application).await?;
+
+    println!("Application user: {:?}", user);
+
+    let registration = crate::cloud::register_device(&crosser.token, &application, &user).await?;
+
+    println!("Registered device: {:?}", registration);
 
     let gzip = crate::tar::tar_gz_dockerfile_directory("./app")?;
 
-    let username = crate::cloud::get_application_username(&crosser.token, app).await?;
+    let success =
+        crate::cloud::build_application(&crosser.token, &application, &user, gzip).await?;
 
-    println!("Application username: {}", username);
-
-    let success = crate::cloud::build_application(&crosser.token, &username, app, gzip).await?;
     println!("Build result: {:?}", success);
 
     Ok(())

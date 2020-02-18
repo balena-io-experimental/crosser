@@ -1,7 +1,8 @@
 use std::io::{stdout, Write};
 
 use anyhow::{Context, Result};
-use serde::Deserialize;
+
+use serde::{Deserialize, Serialize};
 use serde_json::{Deserializer, Value};
 
 use crossterm::cursor::MoveUp;
@@ -14,6 +15,7 @@ const BUILDER_BASE: &str = "https://builder.balena-cloud.com";
 
 const ENDPOINT_APPLICATION: &str = "v5/application";
 const BUILD_ENDPOINT: &str = "v3/build";
+const REGISTER_ENDPOINT: &str = "device/register";
 
 #[derive(Debug, Deserialize)]
 struct Response<T> {
@@ -24,7 +26,8 @@ struct Response<T> {
 #[derive(Debug, Deserialize)]
 pub struct Application {
     id: u64,
-    app_name: String,
+    #[serde(rename = "app_name")]
+    name: String,
     device_type: String,
 }
 
@@ -41,45 +44,71 @@ async fn get(token: &str, endpoint: &str) -> Result<reqwest::Response> {
         .await?)
 }
 
-pub async fn get_application_by_name(token: &str, app: &str) -> Result<Vec<Application>> {
+async fn post<T: Serialize + ?Sized>(
+    token: &str,
+    endpoint: &str,
+    json: &T,
+) -> Result<reqwest::Response> {
+    let url = format!("{}/{}", API_BASE, endpoint);
+    Ok(reqwest::Client::new()
+        .post(&url)
+        .json(json)
+        .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await?)
+}
+
+pub async fn get_application_by_name(token: &str, app: &str) -> Result<Application> {
     Ok(get(token, &get_application_by_name_endpoint(app))
         .await?
         .json::<Response<Application>>()
         .await?
-        .data)
+        .data
+        .pop()
+        .context("Application not found")?)
 }
 
-pub async fn get_application_username(token: &str, app: &str) -> Result<String> {
-    let mut users = get(token, &get_application_username_endpoint(app))
+#[derive(Debug, Deserialize)]
+struct ApplicationUsers {
+    id: u64,
+    user: Vec<User>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct User {
+    pub id: u64,
+    pub username: String,
+}
+
+pub async fn get_application_user(token: &str, application: &Application) -> Result<User> {
+    let mut response = get(token, &get_application_user_endpoint(&application.name))
         .await?
-        .json::<Response<Value>>()
+        .json::<Response<ApplicationUsers>>()
         .await?
         .data;
 
-    Ok(users
+    Ok(response
         .pop()
-        .context("One application owner expected")?
-        .pointer("/user/0/username")
-        .context("Username pointer failed")?
-        .as_str()
-        .context("Usename not a string")?
-        .to_string())
+        .context("Application not found")?
+        .user
+        .pop()
+        .context("No application users defined")?)
 }
 
-fn get_application_username_endpoint(app: &str) -> String {
+fn get_application_user_endpoint(app: &str) -> String {
     format!(
-        "{}?$expand=user($select=username)&$filter=app_name eq '{}'&$select=id",
+        "{}?$expand=user($select=id,username)&$filter=app_name eq '{}'&$select=id",
         ENDPOINT_APPLICATION, app
     )
 }
 
 pub async fn build_application(
     token: &str,
-    username: &str,
-    app: &str,
+    application: &Application,
+    user: &User,
     gzip: Vec<u8>,
 ) -> Result<bool> {
-    let endpoint = get_build_application_endpoint(username, app);
+    let endpoint = get_build_application_endpoint(&user.username, &application.name);
     let url = format!("{}/{}", BUILDER_BASE, endpoint);
     println!("{}", url);
     let mut res = reqwest::Client::new()
@@ -207,3 +236,53 @@ fn get_build_application_endpoint(username: &str, app: &str) -> String {
         BUILD_ENDPOINT, username, app
     )
 }
+
+#[derive(Debug, Serialize)]
+pub struct RegistrationRequest {
+    #[serde(rename = "application")]
+    application_id: u64,
+    #[serde(rename = "user")]
+    user_id: u64,
+    device_type: String,
+    uuid: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RegistrationResponse {
+    pub id: u64,
+    pub uuid: String,
+    pub api_key: String,
+}
+
+pub async fn register_device(
+    token: &str,
+    application: &Application,
+    user: &User,
+) -> Result<RegistrationResponse> {
+    let input = RegistrationRequest {
+        application_id: application.id,
+        user_id: user.id,
+        device_type: application.device_type.clone(),
+        uuid: new_uuid()?,
+    };
+
+    Ok(post(token, REGISTER_ENDPOINT, &input)
+        .await?
+        .json::<RegistrationResponse>()
+        .await?)
+}
+
+fn new_uuid() -> Result<String> {
+    let mut buf = [0; 16];
+    getrandom::getrandom(&mut buf).context("Random generation failed")?;
+    Ok(hex::encode(buf))
+}
+
+/*
+curl --verbose \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer axXSVwCiWho7BnFajmNPOF0coA3hrzAR" \
+  --request POST \
+  --data '{"application":1587252,"device_type":"raspberrypi3","user":21420,"uuid":"94210a15349f4f438f7f142be27da30f"}' \
+  https://api.balena-cloud.com/device/register
+*/
