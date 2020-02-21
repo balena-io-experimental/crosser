@@ -2,6 +2,7 @@ use anyhow::Result;
 
 mod cloud;
 mod config;
+mod registry;
 mod tar;
 
 #[tokio::main]
@@ -27,9 +28,11 @@ async fn main() -> Result<()> {
 
     println!("Build result: {:?}", success);
 
-    let image = crate::cloud::get_device_image(&crosser.token, &registration.uuid).await?;
+    let image_url = crate::cloud::get_device_image_url(&crosser.token, &registration.uuid).await?;
 
-    println!("Image: {}", image);
+    println!("Image URL: {}", image_url);
+
+    let _ = crate::registry::download_image(&image_url, &registration).await?;
 
     Ok(())
 }

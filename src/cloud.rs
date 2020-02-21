@@ -238,7 +238,7 @@ fn get_build_application_endpoint(username: &str, app: &str) -> String {
 }
 
 #[derive(Debug, Serialize)]
-pub struct RegistrationRequest {
+pub struct DeviceRegistrationRequest {
     #[serde(rename = "application")]
     application_id: u64,
     #[serde(rename = "user")]
@@ -248,7 +248,7 @@ pub struct RegistrationRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct RegistrationResponse {
+pub struct DeviceRegistration {
     pub id: u64,
     pub uuid: String,
     pub api_key: String,
@@ -258,8 +258,8 @@ pub async fn register_device(
     token: &str,
     application: &Application,
     user: &User,
-) -> Result<RegistrationResponse> {
-    let input = RegistrationRequest {
+) -> Result<DeviceRegistration> {
+    let input = DeviceRegistrationRequest {
         application_id: application.id,
         user_id: user.id,
         device_type: application.device_type.clone(),
@@ -268,7 +268,7 @@ pub async fn register_device(
 
     Ok(post(token, REGISTER_ENDPOINT, &input)
         .await?
-        .json::<RegistrationResponse>()
+        .json::<DeviceRegistration>()
         .await?)
 }
 
@@ -278,7 +278,7 @@ fn new_uuid() -> Result<String> {
     Ok(hex::encode(buf))
 }
 
-pub async fn get_device_image(token: &str, uuid: &str) -> Result<String> {
+pub async fn get_device_image_url(token: &str, uuid: &str) -> Result<String> {
     let value = get(token, &get_device_state_endpoint(uuid))
         .await?
         .json::<Value>()

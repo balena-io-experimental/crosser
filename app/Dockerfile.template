@@ -1,3 +1,7 @@
 FROM balenalib/%%RESIN_MACHINE_NAME%%-debian
 
+WORKDIR /app
+
+RUN echo "hello" > hello.txt
+
 CMD ["sleep", "infinity"]
