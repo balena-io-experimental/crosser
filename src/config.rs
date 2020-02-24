@@ -21,10 +21,28 @@ pub enum Arch {
     Armv7hf,
 }
 
+impl std::fmt::Display for Arch {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+        match *self {
+            Arch::Aarch64 => f.write_str("aarch64"),
+            Arch::Armv7hf => f.write_str("armv7hf"),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub enum Libc {
     Glibc,
     Musl,
+}
+
+impl std::fmt::Display for Libc {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+        match *self {
+            Libc::Glibc => f.write_str("glibc"),
+            Libc::Musl => f.write_str("musl"),
+        }
+    }
 }
 
 pub fn read_config(cli_args: &crate::cli::CliArgs) -> Result<Config> {

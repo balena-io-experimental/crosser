@@ -13,6 +13,9 @@ async fn main() -> Result<()> {
     let config = config::read_config(&cli_args)?;
 
     if true {
+        for (arch, libc) in &config.platforms {
+            println!("{} / {}", arch, libc);
+        }
         println!("Config: {:?}", config);
         std::process::exit(0);
     }
