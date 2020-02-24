@@ -24,7 +24,7 @@ pub async fn build_application(
     let endpoint = get_build_application_endpoint(&user.username, &application.name);
     let url = format!("{}/{}", BUILDER_BASE, endpoint);
     println!("{}", url);
-    let mut res = reqwest::Client::new()
+    let response = reqwest::Client::new()
         .post(&url)
         .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
         .header(reqwest::header::CONTENT_ENCODING, "gzip")
@@ -32,11 +32,15 @@ pub async fn build_application(
         .send()
         .await?;
 
+    parse_build_stream(response).await
+}
+
+async fn parse_build_stream(mut response: reqwest::Response) -> Result<bool> {
     let mut stream = ArrayStream::new();
 
     let mut success = false;
 
-    while let Some(chunk) = res.chunk().await? {
+    while let Some(chunk) = response.chunk().await? {
         stream.extend(std::str::from_utf8(&chunk).context("Response is not an utf-8 string")?);
         for value in &mut stream {
             let obj = value

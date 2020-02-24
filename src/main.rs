@@ -1,9 +1,9 @@
 use anyhow::Result;
 
+mod api;
 mod application;
 mod builder;
 mod cli;
-mod api;
 mod config;
 mod device;
 mod registry;

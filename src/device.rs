@@ -3,8 +3,8 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::application::{Application, User};
 use crate::api::{get, post};
+use crate::application::{Application, User};
 
 const REGISTER_ENDPOINT: &str = "device/register";
 
