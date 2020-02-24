@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+mod application;
 mod builder;
 mod cli;
 mod cloud;
@@ -22,9 +23,10 @@ async fn main() -> Result<()> {
         std::process::exit(0);
     }
 
-    let application = crate::cloud::get_application_by_name(&config.token, &config.name).await?;
+    let application =
+        crate::application::get_application_by_name(&config.token, &config.name).await?;
 
-    let user = crate::cloud::get_application_user(&config.token, &application).await?;
+    let user = crate::application::get_application_user(&config.token, &application).await?;
 
     println!("Application user: {:?}", user);
 

@@ -9,8 +9,8 @@ use crossterm::terminal::{Clear, ClearType};
 
 use serde_json::{Deserializer, Value};
 
-use crate::cloud::Application;
-use crate::cloud::User;
+use crate::application::Application;
+use crate::application::User;
 
 const BUILDER_BASE: &str = "https://builder.balena-cloud.com";
 const BUILD_ENDPOINT: &str = "v3/build";
