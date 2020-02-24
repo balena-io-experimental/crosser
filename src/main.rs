@@ -15,7 +15,7 @@ async fn main() -> Result<()> {
 
     let config = config::read_config(&cli_args)?;
 
-    if true {
+    if false {
         for (arch, libc) in &config.platforms {
             println!("{} / {}", arch, libc);
         }
@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
 
     println!("Registered device: {:?}", registration);
 
-    let gzip = crate::tar::tar_gz_dockerfile_directory("./app")?;
+    let gzip = crate::tar::tar_gz_dockerfile_directory(&config.src)?;
 
     let success =
         crate::builder::build_application(&config.token, &application, &user, gzip).await?;
