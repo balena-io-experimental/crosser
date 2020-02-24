@@ -3,7 +3,7 @@ use anyhow::Result;
 mod application;
 mod builder;
 mod cli;
-mod cloud;
+mod api;
 mod config;
 mod device;
 mod registry;

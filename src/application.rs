@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 
 use serde::Deserialize;
 
-use crate::cloud::{get, Response};
+use crate::api::{get, Response};
 
 const ENDPOINT_APPLICATION: &str = "v5/application";
 

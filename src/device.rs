@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::application::{Application, User};
-use crate::cloud::{get, post};
+use crate::api::{get, post};
 
 const REGISTER_ENDPOINT: &str = "device/register";
 
