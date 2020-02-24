@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use futures::future::try_join_all;
 
-use crate::cloud::DeviceRegistration;
+use crate::device::DeviceRegistration;
 
 fn parse_image_url(image_url: &str) -> Result<(String, String)> {
     let registry_index = image_url.find('/').unwrap();

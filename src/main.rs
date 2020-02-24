@@ -4,6 +4,7 @@ mod builder;
 mod cli;
 mod cloud;
 mod config;
+mod device;
 mod registry;
 mod tar;
 
@@ -27,7 +28,7 @@ async fn main() -> Result<()> {
 
     println!("Application user: {:?}", user);
 
-    let registration = crate::cloud::register_device(&config.token, &application, &user).await?;
+    let registration = crate::device::register_device(&config.token, &application, &user).await?;
 
     println!("Registered device: {:?}", registration);
 
@@ -38,7 +39,7 @@ async fn main() -> Result<()> {
 
     println!("Build result: {:?}", success);
 
-    let image_url = crate::cloud::get_device_image_url(&config.token, &registration.uuid).await?;
+    let image_url = crate::device::get_device_image_url(&config.token, &registration.uuid).await?;
 
     println!("Image URL: {}", image_url);
 
