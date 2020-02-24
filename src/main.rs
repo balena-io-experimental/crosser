@@ -1,7 +1,7 @@
 use anyhow::Result;
 
+mod cli;
 mod cloud;
-mod config;
 mod registry;
 mod tar;
 
@@ -9,7 +9,7 @@ mod tar;
 async fn main() -> Result<()> {
     let app_name = "crosser";
 
-    let crosser = config::read_config();
+    let crosser = cli::read_cli_args();
 
     let application = crate::cloud::get_application_by_name(&crosser.token, app_name).await?;
 
