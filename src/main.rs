@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+mod builder;
 mod cli;
 mod cloud;
 mod config;
@@ -32,7 +33,8 @@ async fn main() -> Result<()> {
 
     let gzip = crate::tar::tar_gz_dockerfile_directory("./app")?;
 
-    let success = crate::cloud::build_application(&config.token, &application, &user, gzip).await?;
+    let success =
+        crate::builder::build_application(&config.token, &application, &user, gzip).await?;
 
     println!("Build result: {:?}", success);
 
