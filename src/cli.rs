@@ -1,7 +1,7 @@
-use clap::{App, Arg, ArgMatches};
+use clap::{App, Arg};
 
 pub struct CliArgs {
-    pub token: String,
+    pub config: Option<String>,
 }
 
 pub fn read_cli_args() -> CliArgs {
@@ -10,22 +10,14 @@ pub fn read_cli_args() -> CliArgs {
         .author(env!("CARGO_PKG_AUTHORS"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .arg(
-            Arg::with_name("TOKEN")
-                .help("Balena API token")
-                .required(true)
+            Arg::with_name("CONFIG")
+                .help("Config file")
+                .required(false)
                 .index(1),
         )
         .get_matches();
 
-    let token = get_token(&matches);
+    let config = matches.value_of("CONFIG").map(|c| c.to_string());
 
-    CliArgs { token }
-}
-
-fn get_token(matches: &ArgMatches) -> String {
-    if let Some(contents) = matches.value_of("TOKEN") {
-        contents.into()
-    } else {
-        unreachable!()
-    }
+    CliArgs { config }
 }

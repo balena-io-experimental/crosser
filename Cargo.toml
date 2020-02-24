@@ -18,3 +18,4 @@ getrandom = "0.1"
 hex = "0.3"
 dkregistry = { git="https://github.com/camallo/dkregistry-rs" }
 futures = "0.3"
+ron = "0.5"
