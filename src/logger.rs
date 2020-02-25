@@ -1,8 +1,14 @@
+use std::io::{stdout, Write};
 use std::path::Path;
 
 use anyhow::{Context, Result};
 
 use log::{LevelFilter, Log, Metadata, Record};
+
+use crossterm::{
+    execute,
+    style::{Color, Print, ResetColor, SetForegroundColor},
+};
 
 static LOGGER: Logger = Logger;
 
@@ -15,12 +21,27 @@ impl Log for Logger {
 
     fn log(&self, record: &Record) {
         let origin = get_origin(record);
-        let trimmed = &origin[..std::cmp::min(origin.len(), 8)];
-        let with_brackets = format!("[{}]", trimmed);
-        println!("{:10} {}", with_brackets, record.args());
+        let formatted_origin = format_origin(&origin);
+
+        let _ = execute!(
+            stdout(),
+            SetForegroundColor(Color::Cyan),
+            Print(formatted_origin),
+            ResetColor,
+            Print(' '),
+            Print(record.args()),
+            Print('\n')
+        );
     }
 
     fn flush(&self) {}
+}
+
+fn format_origin(origin: &str) -> String {
+    let trimmed = &origin[..std::cmp::min(origin.len(), 8)];
+    let with_brackets = format!("[{}]", trimmed);
+    let with_spaces = format!("{:10}", with_brackets);
+    with_spaces
 }
 
 fn get_origin(record: &Record) -> String {
