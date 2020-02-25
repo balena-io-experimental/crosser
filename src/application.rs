@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use log::info;
 
 use serde::Deserialize;
 
@@ -31,6 +32,7 @@ fn get_application_by_name_endpoint(app: &str) -> String {
 }
 
 pub async fn get_application_by_name(token: &str, app: &str) -> Result<Application> {
+    info!("Getting application by name '{}'", app);
     Ok(get(token, &get_application_by_name_endpoint(app))
         .await?
         .json::<Response<Application>>()
@@ -41,6 +43,7 @@ pub async fn get_application_by_name(token: &str, app: &str) -> Result<Applicati
 }
 
 pub async fn get_application_user(token: &str, application: &Application) -> Result<User> {
+    info!("Getting application user '{}'", application.name);
     let mut response = get(token, &get_application_user_endpoint(&application.name))
         .await?
         .json::<Response<ApplicationUsers>>()
