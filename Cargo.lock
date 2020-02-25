@@ -222,6 +222,7 @@ dependencies = [
  "futures",
  "getrandom",
  "hex",
+ "log",
  "reqwest",
  "ron",
  "serde",

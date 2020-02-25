@@ -1,6 +1,7 @@
-use anyhow::{Context, Result};
-
 use std::io::{stdout, Write};
+
+use anyhow::{Context, Result};
+use log::info;
 
 use crossterm::cursor::MoveUp;
 use crossterm::execute;
@@ -23,7 +24,7 @@ pub async fn build_application(
 ) -> Result<bool> {
     let endpoint = get_build_application_endpoint(&user.username, &application.name);
     let url = format!("{}/{}", BUILDER_BASE, endpoint);
-    println!("{}", url);
+    info!("{}", url);
     let response = reqwest::Client::new()
         .post(&url)
         .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))

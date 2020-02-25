@@ -1,4 +1,5 @@
 use anyhow::Result;
+use log::info;
 
 use futures::future::try_join_all;
 
@@ -27,19 +28,19 @@ pub async fn download_image(image_url: &str, registration: &DeviceRegistration) 
 
     let dclient = authenticate_client(client, &image).await.unwrap();
 
-    println!("Downloading image manifest...");
+    info!("Downloading image manifest...");
     let manifest = dclient.get_manifest(&image, "latest").await.unwrap();
 
     let layers_digests = manifest.layers_digests(None).unwrap();
 
-    println!("Downloading {} layers...", layers_digests.len());
+    info!("Downloading {} layers...", layers_digests.len());
     let blob_futures = layers_digests
         .iter()
         .map(|layer_digest| dclient.get_blob(&image, &layer_digest))
         .collect::<Vec<_>>();
 
     let blobs = try_join_all(blob_futures).await.unwrap();
-    println!("All layers downloaded");
+    info!("All layers downloaded");
 
     let path = &format!("{}", &image).replace("/", "_");
     let path = std::path::Path::new(&path);
@@ -70,15 +71,15 @@ pub async fn authenticate_client(
     if !client.is_auth(Some(token.token())).await? {
         Err("Login failed".into())
     } else {
-        println!("Logged in");
+        info!("Logged in");
         Ok(client.set_token(Some(token.token())).clone())
     }
 }
 
 fn unpack(layers: &[Vec<u8>], target_dir: &std::path::Path) -> Result<()> {
-    println!("Unpacking layers to {}", target_dir.to_string_lossy());
+    info!("Unpacking layers to {}", target_dir.to_string_lossy());
     for (index, layer) in layers.iter().enumerate() {
-        println!("Unpacking layer {}", index + 1);
+        info!("Unpacking layer {}", index + 1);
         let gz_dec = flate2::read::GzDecoder::new(layer.as_slice());
         let mut archive = tar::Archive::new(gz_dec);
         archive.set_preserve_permissions(true);
@@ -90,7 +91,7 @@ fn unpack(layers: &[Vec<u8>], target_dir: &std::path::Path) -> Result<()> {
             }
         }
     }
-    println!("All layers unpacked");
+    info!("All layers unpacked");
     Ok(())
 }
 
