@@ -30,6 +30,12 @@ async fn main() -> Result<()> {
     let application =
         crate::application::get_application_by_name(&config.token, &config.name).await?;
 
+    let application = if let Some(app) = application {
+        app
+    } else {
+        crate::application::create_application(&config.token, &config.name, "raspberrypi3").await?
+    };
+
     let user = crate::application::get_application_user(&config.token, &application).await?;
 
     info!("Application user: {:?}", user);
