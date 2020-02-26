@@ -10,39 +10,21 @@ use serde::Deserialize;
 pub struct Config {
     pub token: String,
     pub name: String,
-    pub src: String,
-    pub dst: Vec<(String, String)>,
-    pub platforms: Vec<(Arch, Libc)>,
+    pub copy: Vec<CopyFromTo>,
+    pub targets: Vec<Target>,
 }
 
 #[derive(Debug, Deserialize)]
-pub enum Arch {
-    Aarch64,
-    Armv7hf,
-}
-
-impl std::fmt::Display for Arch {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        match *self {
-            Arch::Aarch64 => f.write_str("aarch64"),
-            Arch::Armv7hf => f.write_str("armv7hf"),
-        }
-    }
+pub struct CopyFromTo {
+    pub from: String,
+    pub to: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub enum Libc {
-    Glibc,
-    Musl,
-}
-
-impl std::fmt::Display for Libc {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        match *self {
-            Libc::Glibc => f.write_str("glibc"),
-            Libc::Musl => f.write_str("musl"),
-        }
-    }
+pub struct Target {
+    pub slug: String,
+    pub device_type: String,
+    pub source: String,
 }
 
 pub fn read_config(cli_args: &crate::cli::CliArgs) -> Result<Config> {

@@ -1,6 +1,3 @@
-use anyhow::Result;
-use log::info;
-
 mod api;
 mod application;
 mod builder;
@@ -11,6 +8,11 @@ mod logger;
 mod registry;
 mod tar;
 
+use anyhow::Result;
+use log::info;
+
+use crate::application::get_or_create_application;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     crate::logger::init()?;
@@ -19,43 +21,41 @@ async fn main() -> Result<()> {
 
     let config = config::read_config(&cli_args)?;
 
-    if false {
-        for (arch, libc) in &config.platforms {
-            info!("{} / {}", arch, libc);
-        }
-        info!("Config: {:?}", config);
-        std::process::exit(0);
+    for target in &config.targets {
+        info!(
+            "Building '{}' for '{}' from {}",
+            target.slug, target.device_type, target.source
+        );
+
+        let application_name = format!("{}-{}", config.name, target.slug);
+
+        let application =
+            get_or_create_application(&config.token, &application_name, &target.device_type)
+                .await?;
+
+        let user = crate::application::get_application_user(&config.token, &application).await?;
+
+        info!("Application user: {:?}", user);
+
+        let registration =
+            crate::device::register_device(&config.token, &application, &user).await?;
+
+        info!("Registered device: {:?}", registration);
+
+        let gzip = crate::tar::tar_gz_dockerfile_directory(&target.source)?;
+
+        let success =
+            crate::builder::build_application(&config.token, &application, &user, gzip).await?;
+
+        info!("Build result: {:?}", success);
+
+        let image_url =
+            crate::device::get_device_image_url(&config.token, &registration.uuid).await?;
+
+        info!("Image URL: {}", image_url);
+
+        crate::registry::download_image(&image_url, &registration).await?;
     }
-
-    let application =
-        crate::application::get_application_by_name(&config.token, &config.name).await?;
-
-    let application = if let Some(app) = application {
-        app
-    } else {
-        crate::application::create_application(&config.token, &config.name, "raspberrypi3").await?
-    };
-
-    let user = crate::application::get_application_user(&config.token, &application).await?;
-
-    info!("Application user: {:?}", user);
-
-    let registration = crate::device::register_device(&config.token, &application, &user).await?;
-
-    info!("Registered device: {:?}", registration);
-
-    let gzip = crate::tar::tar_gz_dockerfile_directory(&config.src)?;
-
-    let success =
-        crate::builder::build_application(&config.token, &application, &user, gzip).await?;
-
-    info!("Build result: {:?}", success);
-
-    let image_url = crate::device::get_device_image_url(&config.token, &registration.uuid).await?;
-
-    info!("Image URL: {}", image_url);
-
-    let _ = crate::registry::download_image(&image_url, &registration).await?;
 
     Ok(())
 }

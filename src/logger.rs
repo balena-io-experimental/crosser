@@ -59,7 +59,7 @@ fn get_origin(record: &Record) -> String {
         }
         return module.to_string();
     }
-    return "...".to_string();
+    "...".to_string()
 }
 
 fn make_ascii_titlecase(s: &mut str) {

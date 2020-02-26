@@ -42,7 +42,7 @@ pub async fn download_image(image_url: &str, registration: &DeviceRegistration) 
     let blobs = try_join_all(blob_futures).await.unwrap();
     info!("All layers downloaded");
 
-    let path = &format!("{}", &image).replace("/", "_");
+    let path = &image.replace("/", "_");
     let path = std::path::Path::new(&path);
 
     std::fs::create_dir(&path).unwrap();
