@@ -20,7 +20,8 @@ impl Log for Logger {
     }
 
     fn log(&self, record: &Record) {
-        let origin = get_origin(record);
+        let mut origin = get_origin(record);
+        make_ascii_titlecase(&mut origin);
         let formatted_origin = format_origin(&origin);
 
         let _ = execute!(
@@ -59,6 +60,12 @@ fn get_origin(record: &Record) -> String {
         return module.to_string();
     }
     return "...".to_string();
+}
+
+fn make_ascii_titlecase(s: &mut str) {
+    if let Some(r) = s.get_mut(0..1) {
+        r.make_ascii_uppercase();
+    }
 }
 
 pub fn init() -> Result<()> {
