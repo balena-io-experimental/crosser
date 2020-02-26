@@ -1,7 +1,7 @@
 use clap::{App, Arg};
 
 pub struct CliArgs {
-    pub config: Option<String>,
+    pub config: String,
 }
 
 pub fn read_cli_args() -> CliArgs {
@@ -17,7 +17,11 @@ pub fn read_cli_args() -> CliArgs {
         )
         .get_matches();
 
-    let config = matches.value_of("CONFIG").map(|c| c.to_string());
+    let default_config = format!("{}.ron", env!("CARGO_PKG_NAME"));
+    let config = matches
+        .value_of("CONFIG")
+        .unwrap_or(&default_config)
+        .to_string();
 
     CliArgs { config }
 }

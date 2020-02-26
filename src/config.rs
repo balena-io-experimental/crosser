@@ -28,17 +28,11 @@ pub struct Target {
 }
 
 pub fn read_config(cli_args: &crate::cli::CliArgs) -> Result<Config> {
-    let config_file = if let Some(ref config_file) = cli_args.config {
-        config_file
-    } else {
-        "crosser.ron"
-    };
-
-    let file =
-        File::open(config_file).context(format!("Opening config file '{}' failed", config_file))?;
+    let file = File::open(&cli_args.config)
+        .context(format!("Opening config file '{}' failed", cli_args.config))?;
 
     Ok(from_reader(file).context(format!(
         "Deserializing config file '{}' failed",
-        config_file
+        cli_args.config
     ))?)
 }

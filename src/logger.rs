@@ -47,7 +47,7 @@ fn format_origin(origin: &str) -> String {
 
 fn get_origin(record: &Record) -> String {
     if let Some(module) = record.module_path() {
-        if module.starts_with("crosser") {
+        if module.starts_with(env!("CARGO_PKG_NAME")) {
             if let Some(file) = record.file() {
                 let path = Path::new(file);
                 let file_stem = path

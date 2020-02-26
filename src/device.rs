@@ -18,7 +18,7 @@ pub struct DeviceRegistrationRequest {
     uuid: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DeviceRegistration {
     pub id: u64,
     pub uuid: String,
