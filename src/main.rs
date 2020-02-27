@@ -67,7 +67,7 @@ async fn main() -> Result<()> {
 
         info!("Image URL: {}", image_url);
 
-        download_image(&image_url, &registration).await?;
+        let _temp_dir = download_image(&image_url, &registration).await?;
     }
 
     Ok(())

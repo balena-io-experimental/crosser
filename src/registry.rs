@@ -1,7 +1,8 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::info;
 
 use futures::future::try_join_all;
+use tempfile::TempDir;
 
 use crate::device::DeviceRegistration;
 
@@ -14,7 +15,7 @@ fn parse_image_url(image_url: &str) -> Result<(String, String)> {
     Ok((registry, image))
 }
 
-pub async fn download_image(image_url: &str, registration: &DeviceRegistration) -> Result<()> {
+pub async fn download_image(image_url: &str, registration: &DeviceRegistration) -> Result<TempDir> {
     let (registry, image) = parse_image_url(image_url)?;
     let username = format!("d_{}", registration.uuid);
 
@@ -42,15 +43,11 @@ pub async fn download_image(image_url: &str, registration: &DeviceRegistration) 
     let blobs = try_join_all(blob_futures).await.unwrap();
     info!("All layers downloaded");
 
-    let path = &image.replace("/", "_");
-    let path = std::path::Path::new(&path);
+    let temp_dir = TempDir::new().context("Creating temp directory for unpacking image failed")?;
 
-    std::fs::create_dir(&path).unwrap();
-    let can_path = path.canonicalize().unwrap();
+    unpack(&blobs, temp_dir.path())?;
 
-    unpack(&blobs, &can_path)?;
-
-    Ok(())
+    Ok(temp_dir)
 }
 
 pub async fn authenticate_client(

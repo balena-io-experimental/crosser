@@ -20,3 +20,4 @@ dkregistry = { git="https://github.com/camallo/dkregistry-rs" }
 futures = "0.3"
 ron = "0.5"
 log = { version = "0.4", features = ["std"]}
+tempfile = "3"
