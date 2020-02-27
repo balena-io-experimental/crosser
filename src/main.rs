@@ -9,8 +9,10 @@ mod registry;
 mod state;
 mod tar;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::info;
+
+use fs_extra::dir::{copy, CopyOptions};
 
 use crate::application::{get_application_user, get_or_create_application, Application, User};
 use crate::builder::build_application;
@@ -61,7 +63,17 @@ async fn main() -> Result<()> {
 
         let image_url = get_device_image_url(&config.token, &registration.uuid).await?;
 
-        let _temp_dir = download_image(&image_url, &registration).await?;
+        let temp_dir = download_image(&image_url, &registration).await?;
+
+        for copy_spec in &config.copy {
+            let source = temp_dir.path().join(&copy_spec.from[1..]);
+            let destination = std::path::Path::new(&copy_spec.to).join(&target.slug);
+            std::fs::create_dir_all(&destination)
+                .context("Failed to create destination directory")?;
+            info!("Copy from {:?} to {:?}", source, destination);
+            copy(source, destination, &CopyOptions::new())
+                .context("Failed to copy image contents")?;
+        }
     }
 
     Ok(())

@@ -21,3 +21,4 @@ futures = "0.3"
 ron = "0.5"
 log = { version = "0.4", features = ["std"]}
 tempfile = "3"
+fs_extra = "1.1"
