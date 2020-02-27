@@ -4,6 +4,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use log::info;
 
 use ron::de::from_reader;
 use ron::ser::{to_string_pretty, PrettyConfig};
@@ -40,6 +41,11 @@ pub fn add_device_registration(
     registration: &DeviceRegistration,
     state: &mut State,
 ) -> Result<()> {
+    info!(
+        "Saving state registration data for '{}' ({})",
+        registration.uuid, registration.id
+    );
+
     state.0.insert(slug.to_string(), registration.clone());
 
     save_state(cli_args, state)

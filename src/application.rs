@@ -60,25 +60,36 @@ pub async fn get_application_by_name(
                 application.device_type
             );
         }
+        info!(
+            "Application found '{}' ({})",
+            application.name, application.id
+        );
+    } else {
+        info!("Application not found");
     }
 
     Ok(application_option)
 }
 
 pub async fn get_application_user(token: &str, application: &Application) -> Result<User> {
-    info!("Getting application user '{}'", application.name);
+    info!("Getting '{}' user", application.name);
+
     let mut response = get(token, &get_application_user_endpoint(&application.name))
         .await?
         .json::<Response<ApplicationUsers>>()
         .await?
         .data;
 
-    Ok(response
+    let user = response
         .pop()
         .context("Application not found")?
         .user
         .pop()
-        .context("No application users defined")?)
+        .context("No application users defined")?;
+
+    info!("Application user is '{}' ({})", user.username, user.id);
+
+    Ok(user)
 }
 
 fn get_application_user_endpoint(name: &str) -> String {
@@ -90,15 +101,23 @@ fn get_application_user_endpoint(name: &str) -> String {
 
 pub async fn create_application(token: &str, name: &str, device_type: &str) -> Result<Application> {
     info!("Creating application '{}'", name);
+
     let input = CreateApplicationRequest {
         name: name.to_string(),
         device_type: device_type.to_string(),
     };
 
-    Ok(post(token, ENDPOINT_APPLICATION, &input)
+    let application = post(token, ENDPOINT_APPLICATION, &input)
         .await?
         .json::<Application>()
-        .await?)
+        .await?;
+
+    info!(
+        "Application '{}' created ({})",
+        application.name, application.id
+    );
+
+    Ok(application)
 }
 
 pub async fn get_or_create_application(

@@ -1,21 +1,26 @@
+use std::fmt::Debug;
 use std::io::prelude::*;
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use log::info;
+
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use tar::Builder;
 
 pub fn tar_gz_dockerfile_directory<P>(path: P) -> Result<Vec<u8>>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path> + Debug,
 {
-    tar_gz_dockerfile_directory_impl(path).context("Creating tar gz stream from directory failed")
+    info!("Creating tar gz stream from {:?}", path);
+    tar_gz_dockerfile_directory_impl(&path)
+        .context(format!("Creating tar gz stream from {:?} failed", path))
 }
 
 pub fn tar_gz_dockerfile_directory_impl<P>(path: P) -> Result<Vec<u8>>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path> + Debug,
 {
     let data = tar_dockerfile_directory(path)?;
 
@@ -27,13 +32,13 @@ where
 
 fn tar_dockerfile_directory<P>(path: P) -> Result<Vec<u8>>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path> + Debug,
 {
     let mut data: Vec<u8> = Vec::new();
 
     Builder::new(&mut data)
-        .append_dir_all(".", path)
-        .context("Creating tar stream from directory failed")?;
+        .append_dir_all(".", &path)
+        .context(format!("Creating tar stream from {:?} failed", path))?;
 
     Ok(data)
 }

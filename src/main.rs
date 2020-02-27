@@ -23,7 +23,7 @@ use crate::tar::tar_gz_dockerfile_directory;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    crate::logger::init()?;
+    logger::init()?;
 
     let cli_args = read_cli_args();
 
@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
 
     for target in &config.targets {
         info!(
-            "Building '{}' for '{}' from {}",
+            "Building '{}' for '{}' from '{}'",
             target.slug, target.device_type, target.source
         );
 
@@ -44,8 +44,6 @@ async fn main() -> Result<()> {
                 .await?;
 
         let user = get_application_user(&config.token, &application).await?;
-
-        info!("Application user: {:?}", user);
 
         let registration = get_or_register_device(
             &config.token,
@@ -59,13 +57,9 @@ async fn main() -> Result<()> {
 
         let gzip = tar_gz_dockerfile_directory(&target.source)?;
 
-        let success = build_application(&config.token, &application, &user, gzip).await?;
-
-        info!("Build result: {:?}", success);
+        build_application(&config.token, &application, &user, gzip).await?;
 
         let image_url = get_device_image_url(&config.token, &registration.uuid).await?;
-
-        info!("Image URL: {}", image_url);
 
         let _temp_dir = download_image(&image_url, &registration).await?;
     }
@@ -83,15 +77,16 @@ async fn get_or_register_device(
 ) -> Result<DeviceRegistration> {
     Ok(
         if let Some(registration) = get_device_registration(state, slug) {
-            info!("Reusing device: {:?}", registration);
+            info!(
+                "Reusing device '{}' ({})",
+                registration.uuid, registration.id
+            );
 
             registration
         } else {
             let registration = register_device(token, &application, &user).await?;
 
             add_device_registration(&cli_args, slug, &registration, state)?;
-
-            info!("Registered device: {:?}", registration);
 
             registration
         },

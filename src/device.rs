@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use log::info;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -37,10 +38,17 @@ pub async fn register_device(
         uuid: new_uuid()?,
     };
 
-    Ok(post(token, REGISTER_ENDPOINT, &input)
+    let registration = post(token, REGISTER_ENDPOINT, &input)
         .await?
         .json::<DeviceRegistration>()
-        .await?)
+        .await?;
+
+    info!(
+        "Device registrered '{}' ({})",
+        registration.uuid, registration.id
+    );
+
+    Ok(registration)
 }
 
 fn new_uuid() -> Result<String> {
@@ -50,12 +58,17 @@ fn new_uuid() -> Result<String> {
 }
 
 pub async fn get_device_image_url(token: &str, uuid: &str) -> Result<String> {
+    info!("Getting image URL from '{}' device state", uuid);
+
     let value = get(token, &get_device_state_endpoint(uuid))
         .await?
         .json::<Value>()
         .await?;
 
-    Ok(get_image_from_device_state(&value).context("Image not found in device state")?)
+    let image_url =
+        get_image_from_device_state(&value).context("Image not found in device state")?;
+
+    Ok(image_url)
 }
 
 fn get_device_state_endpoint(uuid: &str) -> String {

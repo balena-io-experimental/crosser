@@ -1,6 +1,6 @@
 use std::io::{stdout, Write};
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use log::info;
 
 use crossterm::cursor::MoveUp;
@@ -21,10 +21,11 @@ pub async fn build_application(
     application: &Application,
     user: &User,
     gzip: Vec<u8>,
-) -> Result<bool> {
+) -> Result<()> {
+    info!("Invoking remote build for '{}'", application.name);
+
     let endpoint = get_build_application_endpoint(&user.username, &application.name);
     let url = format!("{}/{}", BUILDER_BASE, endpoint);
-    info!("{}", url);
     let response = reqwest::Client::new()
         .post(&url)
         .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
@@ -33,7 +34,16 @@ pub async fn build_application(
         .send()
         .await?;
 
-    parse_build_stream(response).await
+    let success = parse_build_stream(response)
+        .await
+        .context("Processing build stream failed")?;
+
+    if success {
+        info!("Remote build for '{}' succeeded", application.name);
+        Ok(())
+    } else {
+        Err(anyhow!("Remote build for '{}' failed", application.name))
+    }
 }
 
 async fn parse_build_stream(mut response: reqwest::Response) -> Result<bool> {

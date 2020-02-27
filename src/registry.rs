@@ -29,12 +29,15 @@ pub async fn download_image(image_url: &str, registration: &DeviceRegistration) 
 
     let dclient = authenticate_client(client, &image).await.unwrap();
 
-    info!("Downloading image manifest...");
+    info!("Downloading image manifest");
     let manifest = dclient.get_manifest(&image, "latest").await.unwrap();
 
     let layers_digests = manifest.layers_digests(None).unwrap();
 
-    info!("Downloading {} layers...", layers_digests.len());
+    info!(
+        "Downloading {} layers. Please wait...",
+        layers_digests.len()
+    );
     let blob_futures = layers_digests
         .iter()
         .map(|layer_digest| dclient.get_blob(&image, &layer_digest))
@@ -66,9 +69,9 @@ pub async fn authenticate_client(
     let token = client.login(&[&login_scope]).await?;
 
     if !client.is_auth(Some(token.token())).await? {
-        Err("Login failed".into())
+        Err("Logging in to registry failed".into())
     } else {
-        info!("Logged in");
+        info!("Logged in to registry");
         Ok(client.set_token(Some(token.token())).clone())
     }
 }
