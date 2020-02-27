@@ -36,9 +36,9 @@ pub fn load_state(cli_args: &CliArgs) -> Result<State> {
 
 pub fn add_device_registration(
     cli_args: &CliArgs,
-    state: &mut State,
     slug: &str,
     registration: &DeviceRegistration,
+    state: &mut State,
 ) -> Result<()> {
     state.0.insert(slug.to_string(), registration.clone());
 
