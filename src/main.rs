@@ -12,7 +12,10 @@ mod tar;
 use anyhow::{Context, Result};
 use log::info;
 
-use fs_extra::dir::{copy, CopyOptions};
+use fs_extra::copy_items;
+use fs_extra::dir::CopyOptions;
+
+use glob::glob;
 
 use crate::application::{get_application_user, get_or_create_application, Application, User};
 use crate::builder::build_application;
@@ -65,15 +68,27 @@ async fn main() -> Result<()> {
 
         let temp_dir = download_image(&image_url, &registration).await?;
 
-        for copy_spec in &config.copy {
-            let source = temp_dir.path().join(&copy_spec.from[1..]);
-            let destination = std::path::Path::new(&copy_spec.to).join(&target.slug);
-            std::fs::create_dir_all(&destination)
-                .context("Failed to create destination directory")?;
-            info!("Copy from {:?} to {:?}", source, destination);
-            copy(source, destination, &CopyOptions::new())
-                .context("Failed to copy image contents")?;
+        let destination = std::path::Path::new(&config.copy.dst).join(&target.slug);
+        std::fs::create_dir_all(&destination).context("Failed to create destination directory")?;
+
+        let mut entries = Vec::new();
+
+        let temp_dir_str = temp_dir.path().to_string_lossy();
+
+        for src_glob in &config.copy.src {
+            let abs_glob = format!("{}{}", temp_dir_str, src_glob);
+            for glob_result in
+                glob(&abs_glob).context(format!("Failed to read glob pattern {}", abs_glob))?
+            {
+                match glob_result {
+                    Ok(path) => entries.push(path),
+                    Err(e) => info!("{:?}", e),
+                }
+            }
         }
+
+        copy_items(&entries, &destination, &CopyOptions::new())
+            .context("Failed to copy image contents")?;
     }
 
     Ok(())

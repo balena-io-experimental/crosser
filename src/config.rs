@@ -10,14 +10,14 @@ use serde::Deserialize;
 pub struct Config {
     pub token: String,
     pub name: String,
-    pub copy: Vec<CopyFromTo>,
+    pub copy: CopySpec,
     pub targets: Vec<Target>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CopyFromTo {
-    pub from: String,
-    pub to: String,
+pub struct CopySpec {
+    pub src: Vec<String>,
+    pub dst: String,
 }
 
 #[derive(Debug, Deserialize)]
