@@ -3,24 +3,21 @@ mod application;
 mod builder;
 mod cli;
 mod config;
+mod copy;
 mod device;
 mod logger;
 mod registry;
 mod state;
 mod tar;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use log::info;
-
-use fs_extra::copy_items;
-use fs_extra::dir::CopyOptions;
-
-use glob::glob;
 
 use crate::application::{get_application_user, get_or_create_application, Application, User};
 use crate::builder::build_application;
 use crate::cli::{read_cli_args, CliArgs};
 use crate::config::read_config;
+use crate::copy::copy_from_image;
 use crate::device::{get_device_image_url, register_device, DeviceRegistration};
 use crate::registry::download_image;
 use crate::state::{add_device_registration, get_device_registration, load_state, State};
@@ -68,27 +65,7 @@ async fn main() -> Result<()> {
 
         let temp_dir = download_image(&image_url, &registration).await?;
 
-        let destination = std::path::Path::new(&config.copy.dst).join(&target.slug);
-        std::fs::create_dir_all(&destination).context("Failed to create destination directory")?;
-
-        let mut entries = Vec::new();
-
-        let temp_dir_str = temp_dir.path().to_string_lossy();
-
-        for src_glob in &config.copy.src {
-            let abs_glob = format!("{}{}", temp_dir_str, src_glob);
-            for glob_result in
-                glob(&abs_glob).context(format!("Failed to read glob pattern {}", abs_glob))?
-            {
-                match glob_result {
-                    Ok(path) => entries.push(path),
-                    Err(e) => info!("{:?}", e),
-                }
-            }
-        }
-
-        copy_items(&entries, &destination, &CopyOptions::new())
-            .context("Failed to copy image contents")?;
+        copy_from_image(&config, &target.slug, temp_dir)?;
     }
 
     Ok(())
