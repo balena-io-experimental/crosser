@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate clap;
+
 mod api;
 mod application;
 mod builder;
@@ -42,13 +45,13 @@ async fn main() -> Result<()> {
         let application_name = format!("{}-{}", config.name, target.slug);
 
         let application =
-            get_or_create_application(&config.token, &application_name, &target.device_type)
+            get_or_create_application(&cli_args.token, &application_name, &target.device_type)
                 .await?;
 
-        let user = get_application_user(&config.token, &application).await?;
+        let user = get_application_user(&cli_args.token, &application).await?;
 
         let registration = get_or_register_device(
-            &config.token,
+            &cli_args.token,
             &cli_args,
             &target.slug,
             &application,
@@ -59,9 +62,9 @@ async fn main() -> Result<()> {
 
         let gzip = tar_gz_dockerfile_directory(&target.source)?;
 
-        build_application(&config.token, &application, &user, gzip).await?;
+        build_application(&cli_args.token, &application, &user, gzip).await?;
 
-        let image_url = get_device_image_url(&config.token, &registration.uuid).await?;
+        let image_url = get_device_image_url(&cli_args.token, &registration.uuid).await?;
 
         let temp_dir = download_image(&image_url, &registration).await?;
 

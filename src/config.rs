@@ -8,7 +8,6 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub token: String,
     pub name: String,
     pub copy: CopySpec,
     pub targets: Vec<Target>,
