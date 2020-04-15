@@ -32,3 +32,17 @@ pub async fn post<T: Serialize + ?Sized>(
         .send()
         .await?)
 }
+
+pub async fn patch<T: Serialize + ?Sized>(
+    token: &str,
+    endpoint: &str,
+    json: &T,
+) -> Result<reqwest::Response> {
+    let url = format!("{}/{}", API_BASE, endpoint);
+    Ok(reqwest::Client::new()
+        .patch(&url)
+        .json(json)
+        .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await?)
+}
