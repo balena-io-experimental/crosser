@@ -1,4 +1,6 @@
 use std::fs::File;
+use std::env::current_dir;
+use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 
@@ -26,12 +28,20 @@ pub struct Target {
     pub source: String,
 }
 
-pub fn read_config(cli_args: &crate::cli::CliArgs) -> Result<Config> {
-    let file = File::open(&cli_args.config)
-        .context(format!("Opening config file '{}' failed", cli_args.config))?;
+pub fn read_config(path: &str) -> Result<Config> {
+    let file = File::open(path)
+        .context(format!("Opening config file '{}' failed", path))?;
 
     Ok(from_reader(file).context(format!(
         "Deserializing config file '{}' failed",
-        cli_args.config
+        path
     ))?)
+}
+
+pub fn relative_to_config_path(config: &str, source: &str) -> Result<PathBuf> {
+    let mut absolute = current_dir()?;
+    absolute.push(config);
+    absolute.pop();
+    absolute.push(source);
+    Ok(absolute)
 }

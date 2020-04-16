@@ -18,7 +18,7 @@ where
         .context(format!("Creating tar gz stream from {:?} failed", path))
 }
 
-pub fn tar_gz_dockerfile_directory_impl<P>(path: P) -> Result<Vec<u8>>
+fn tar_gz_dockerfile_directory_impl<P>(path: P) -> Result<Vec<u8>>
 where
     P: AsRef<Path> + Debug,
 {
