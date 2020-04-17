@@ -6,7 +6,7 @@ pub struct CliArgs {
 }
 
 pub fn read_cli_args() -> CliArgs {
-    let default_config = format!("{}.ron", env!("CARGO_PKG_NAME"));
+    let default_config = format!("{}.yml", env!("CARGO_PKG_NAME"));
 
     let matches = app_from_crate!()
         .arg(
