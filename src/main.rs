@@ -19,7 +19,7 @@ use log::info;
 use crate::application::{get_application_user, get_or_create_application, Application, User};
 use crate::builder::build_application;
 use crate::cli::read_cli_args;
-use crate::config::{relative_to_config_path, read_config};
+use crate::config::{config_name, read_config, relative_to_config_path};
 use crate::copy::copy_from_image;
 use crate::device::{
     create_device, get_device_image_url, get_device_registration, DeviceRegistration,
@@ -33,6 +33,8 @@ async fn main() -> Result<()> {
 
     let cli_args = read_cli_args();
 
+    let config_name = config_name(&cli_args.config)?;
+
     let config = read_config(&cli_args.config)?;
 
     for target in &config.targets {
@@ -40,10 +42,12 @@ async fn main() -> Result<()> {
 
         info!(
             "Building '{}' for '{}' from '{}'",
-            target.slug, target.device_type, source.to_string_lossy()
+            target.slug,
+            target.device_type,
+            source.to_string_lossy()
         );
 
-        let application_name = format!("{}-{}", config.name, target.slug);
+        let application_name = format!("{}-{}", config_name, target.slug);
 
         let application =
             get_or_create_application(&cli_args.token, &application_name, &target.device_type)
@@ -84,6 +88,6 @@ async fn get_or_create_device(
             registration
         } else {
             create_device(token, &application, &user, slug).await?
-        }
+        },
     )
 }

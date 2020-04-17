@@ -10,11 +10,17 @@ use fs_extra::copy_items;
 use fs_extra::dir::CopyOptions;
 use glob::glob;
 
-use crate::config::{Config, relative_to_config_path};
+use crate::config::{relative_to_config_path, Config};
 
-pub fn copy_from_image<P>(config_path: P, config: &Config, slug: &str, temp_dir: TempDir) -> Result<()>
+pub fn copy_from_image<P>(
+    config_path: P,
+    config: &Config,
+    slug: &str,
+    temp_dir: TempDir,
+) -> Result<()>
 where
-    P: AsRef<Path> + Debug {
+    P: AsRef<Path> + Debug,
+{
     let relative = Path::new(&config.copy.dst).join(&slug);
     let destination = relative_to_config_path(config_path, relative)?;
     std::fs::create_dir_all(&destination).context("Failed to create destination directory")?;

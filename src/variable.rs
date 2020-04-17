@@ -72,17 +72,10 @@ async fn store_device_environment_variable(
     Ok(())
 }
 
-pub async fn get_device_api_key(
-    token: &str,
-    device_id: u64,
-) -> Result<Option<String>> {
+pub async fn get_device_api_key(token: &str, device_id: u64) -> Result<Option<String>> {
     get_device_environment_variable(token, device_id, API_KEY).await
 }
 
-pub async fn store_device_api_key(
-    token: &str,
-    device_id: u64,
-    value: &str,
-) -> Result<()> {
+pub async fn store_device_api_key(token: &str, device_id: u64, value: &str) -> Result<()> {
     store_device_environment_variable(token, device_id, API_KEY, value).await
 }

@@ -54,8 +54,7 @@ pub async fn create_device(
 
     rename_device(token, &registration, name).await?;
 
-    store_device_api_key(token, registration.id, &registration.api_key)
-        .await?;
+    store_device_api_key(token, registration.id, &registration.api_key).await?;
 
     Ok(registration)
 }
