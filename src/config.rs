@@ -1,10 +1,11 @@
+use std::fmt::Debug;
 use std::fs::File;
 use std::env::current_dir;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
-use ron::de::from_reader;
+use serde_yaml::from_reader;
 
 use serde::Deserialize;
 
@@ -38,10 +39,12 @@ pub fn read_config(path: &str) -> Result<Config> {
     ))?)
 }
 
-pub fn relative_to_config_path(config: &str, source: &str) -> Result<PathBuf> {
+pub fn relative_to_config_path<P, Q>(config_path: P, path: Q) -> Result<PathBuf>
+where
+    P: AsRef<Path> + Debug, Q: AsRef<Path> + Debug {
     let mut absolute = current_dir()?;
-    absolute.push(config);
+    absolute.push(config_path);
     absolute.pop();
-    absolute.push(source);
+    absolute.push(path);
     Ok(absolute)
 }

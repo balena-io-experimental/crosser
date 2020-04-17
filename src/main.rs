@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
 
         let temp_dir = download_image(&image_url, &registration).await?;
 
-        copy_from_image(&config, &target.slug, temp_dir)?;
+        copy_from_image(&cli_args.config, &config, &target.slug, temp_dir)?;
     }
 
     Ok(())
