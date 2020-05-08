@@ -11,21 +11,22 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    pub source: String,
     pub copy: CopySpec,
     pub targets: Vec<Target>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CopySpec {
-    pub src: Vec<String>,
-    pub dst: String,
+    pub from_image: Vec<String>,
+    pub to: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Target {
     pub slug: String,
     pub device_type: String,
-    pub source: String,
+    pub dockerfile: String,
 }
 
 pub fn read_config(path: &str) -> Result<Config> {
@@ -34,15 +35,13 @@ pub fn read_config(path: &str) -> Result<Config> {
     Ok(from_reader(file).context(format!("Deserializing config file '{}' failed", path))?)
 }
 
-pub fn relative_to_config_path<P, Q>(config_path: P, path: Q) -> Result<PathBuf>
+pub fn config_dir<P>(config_path: P) -> Result<PathBuf>
 where
     P: AsRef<Path> + Debug,
-    Q: AsRef<Path> + Debug,
 {
     let mut absolute = current_dir()?;
     absolute.push(config_path);
     absolute.pop();
-    absolute.push(path);
     Ok(absolute)
 }
 

@@ -19,8 +19,8 @@ use log::info;
 use crate::application::{get_application_user, get_or_create_application, Application, User};
 use crate::builder::build_application;
 use crate::cli::read_cli_args;
-use crate::config::{config_name, read_config, relative_to_config_path};
-use crate::copy::copy_from_image;
+use crate::config::{config_dir, config_name, read_config};
+use crate::copy::{assemble_sources, copy_from_image};
 use crate::device::{
     create_device, get_device_image_url, get_device_registration, DeviceRegistration,
 };
@@ -37,14 +37,16 @@ async fn main() -> Result<()> {
 
     let config = read_config(&cli_args.config)?;
 
+    let config_dir = config_dir(&cli_args.config)?;
+
     for target in &config.targets {
-        let source = relative_to_config_path(&cli_args.config, &target.source)?;
+        let target_source = assemble_sources(&config_dir, &config, &target)?;
+
+        std::env::set_current_dir(&config_dir)?;
 
         info!(
             "Building '{}' for '{}' from '{}'",
-            target.slug,
-            target.device_type,
-            source.to_string_lossy()
+            target.slug, target.device_type, target.dockerfile
         );
 
         let application_name = format!("{}-{}", config_name, target.slug);
@@ -58,7 +60,7 @@ async fn main() -> Result<()> {
         let registration =
             get_or_create_device(&cli_args.token, &application, &target.slug, &user).await?;
 
-        let gzip = tar_gz_dockerfile_directory(&source)?;
+        let gzip = tar_gz_dockerfile_directory(&target_source)?;
 
         build_application(&cli_args.token, &application, &user, gzip).await?;
 
@@ -66,7 +68,7 @@ async fn main() -> Result<()> {
 
         let temp_dir = download_image(&image_url, &registration).await?;
 
-        copy_from_image(&cli_args.config, &config, &target.slug, temp_dir)?;
+        copy_from_image(&config, &target.slug, temp_dir)?;
     }
 
     Ok(())
